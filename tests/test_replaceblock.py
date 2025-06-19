@@ -5,9 +5,9 @@ import sys
 import unittest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from delblock import find_lines_to_remove
+from replace_block import find_lines_to_remove
 
-class TestDelBlock(unittest.TestCase):
+class TestReplaceBlock(unittest.TestCase):
     def assert_lines_to_remove(self, test_file_str, expected_start_line, expected_end_line):
         import tempfile
         temp = tempfile.NamedTemporaryFile(mode='w', delete=False)

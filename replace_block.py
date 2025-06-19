@@ -75,8 +75,13 @@ def parse_args():
     parser.add_argument("--verbose", '-v', action="store_true", help="Print verbose output")
     parser.add_argument("--outfile", '-o', type=str, help="Write output to this file instead of overwriting filename")
     parser.add_argument("--dry-run", '-d', action="store_true", help="Write updated file to a temp file and show diff")
+    parser.add_argument("--dry-run-preserve-temp-file", '-D', action="store_true", help="Same as --dry-run, but keep the temp file in 'filename.new' in current directory")
+    parser.add_argument("--replacement-text", '-r', type=str, help="Text to replace the block with; '-' for stdin")
     args = parser.parse_args()
     args.filename = os.path.abspath(os.path.expanduser(args.filename))
+
+    if args.dry_run_preserve_temp_file:
+        args.dry_run = True
 
     if not args.outfile and not args.dry_run:
         # prompt the user to make sure overwrite is ok
@@ -87,10 +92,19 @@ def parse_args():
 
     return args
 
-def delete_block(filename, delete_from_line, delete_to_line, outfile=None, verbose=False):
+def replace_block(filename, delete_from_line, delete_to_line, replacement_text:str="", outfile=None, verbose=False):
     with open(filename, 'r') as f:
         lines = f.readlines()
-    lines = lines[0:delete_from_line-1] + lines[delete_to_line:]
+    if replacement_text and replacement_text != '-':
+        replacement_lines = replacement_text.split('\n')
+        replacement_lines = [line + '\n' for line in replacement_lines]
+    else:
+        replacement_lines = []
+    if verbose:
+        print(f"replacement_lines = {replacement_lines}")
+    lines = lines[0:delete_from_line-1] + replacement_lines + lines[delete_to_line:]
+    if verbose:
+        print(f"lines = {lines}")
     if outfile:
         if verbose:
             print(f"After deleting lines {delete_from_line} to {delete_to_line} you will have contents in '{outfile}'")
@@ -101,10 +115,10 @@ def delete_block(filename, delete_from_line, delete_to_line, outfile=None, verbo
             f.writelines(lines)
     return 
 
-def do_dry_run_with_diff(filename, start_line, end_line, verbose=False)->int:
+def do_dry_run_with_diff(filename, start_line, end_line, replacement_text:str="", verbose=False, keep_temp_file=False)->int:
     try:
         temp_out_file = tempfile.NamedTemporaryFile(mode='w', delete=False)
-        delete_block(filename, start_line, end_line, outfile=temp_out_file.name, verbose=verbose)
+        replace_block(filename, start_line, end_line, replacement_text=replacement_text, outfile=temp_out_file.name, verbose=verbose)
         temp_out_file.close()
 
         # show the diff
@@ -113,7 +127,12 @@ def do_dry_run_with_diff(filename, start_line, end_line, verbose=False)->int:
         print(f"Error: {e}")
         return 1
     finally:
-        os.unlink(temp_out_file.name)
+        if not keep_temp_file:
+            os.unlink(temp_out_file.name)
+        else:
+            temp_file_new_name = f"{os.path.basename(filename)}.new"
+            os.rename(temp_out_file.name, temp_file_new_name)
+            print(f"Keeping temp file {temp_file_new_name}")
     return 0
 
 def main():
@@ -124,10 +143,16 @@ def main():
         print("block not found; nothing to do")
         return 0
 
-    if args.dry_run:
-        do_dry_run_with_diff(args.filename, start_line, end_line, verbose=args.verbose)
+    if args.replacement_text == '-':
+        print("Enter replacement text (Ctrl-D to end):")
+        replacement_text = sys.stdin.read()
     else:
-        delete_block(args.filename, start_line, end_line, outfile=args.outfile, verbose=args.verbose)
+        replacement_text = args.replacement_text
+
+    if args.dry_run:
+        do_dry_run_with_diff(args.filename, start_line, end_line, replacement_text=replacement_text, verbose=args.verbose, keep_temp_file=args.dry_run_preserve_temp_file)
+    else:
+        replace_block(args.filename, start_line, end_line, replacement_text=replacement_text, outfile=args.outfile, verbose=args.verbose)
     return 0
 
 if __name__ == "__main__":

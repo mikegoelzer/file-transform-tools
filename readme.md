@@ -1,6 +1,6 @@
-# `delblock`
+# `replace_block`
 
-Deletes a block of lines from a file based on a complicated multi-line regex. WIP.
+Replaces a block of lines from a file based on a complicated multi-line regex.
 
 ## Prerequisites
 
@@ -24,27 +24,27 @@ sudo dpkg -i git-delta_${DELTA_VERSION#v}_amd64.deb
 
 ```sh
 # show help
-delblock --help
+replace_block --help
 ```
 
 ```sh
-# just prints the diff of what it would od
-delblock --dry-run ~/.bashrc
+# just prints the diff of what it would do
+replace_block --dry-run ~/.bashrc
 ```
 
 ```sh
 # don't overwrite ~/.bashrc; instead write to new_bashrc
-delblock -o new_bashrc ~/.bashrc
+replace_block -o new_bashrc ~/.bashrc
 ```
 
 ```sh
 # overwrite ~/.bashrc with the block deleted
-delblock ~/.bashrc
+replace_block ~/.bashrc
 ```
 
 ## Running the tests
 
 ```sh
 # run tests
-./tests/test_delblock.py
+./tests/test_replaceblock.py
 ```

@@ -13,15 +13,15 @@
             "console": "integratedTerminal"
         },
         {
-            "name": "Python Debugger: delblock",
+            "name": "Python Debugger: replace_block",
             "type": "debugpy",
             "request": "launch",
             "cwd": "${workspaceFolder}",
-            "program": "delblock",
+            "program": "replace_block",
             "console": "integratedTerminal",
             "args": [
                 "--dry-run",
-                "${workspaceFolder}/tests/delblock_debug_input.txt"
+                "${workspaceFolder}/tests/replace_block_debug_input.txt"
             ]
         }
     ]
