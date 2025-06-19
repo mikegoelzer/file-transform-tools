@@ -1,6 +1,6 @@
-# `delblock
+# `delblock`
 
-Deletes a block of lines from a file based on a complicated multi-line regex
+Deletes a block of lines from a file based on a complicated multi-line regex. WIP.
 
 ## Prereqs
 
@@ -29,27 +29,27 @@ sudo dpkg -i git-delta_${DELTA_VERSION#v}_amd64.deb
 
 ```sh
 # show help
-delblock.py --help
+delblock --help
 ```
 
 ```sh
 # just prints the diff of what it would od
-delblock.py --dry-run ~/.bashrc
+delblock --dry-run ~/.bashrc
 ```
 
 ```sh
 # don't overwrite ~/.bashrc; instead write to new_bashrc
-delblock.py -o new_bashrc ~/.bashrc
+delblock -o new_bashrc ~/.bashrc
 ```
 
 ```sh
 # overwrite ~/.bashrc with the block deleted
-delblock.py ~/.bashrc
+delblock ~/.bashrc
 ```
 
-## Tests
+## Running the tests
 
 ```sh
 # run tests
-./test_delblock.py
+./tests/test_delblock.py
 ```
