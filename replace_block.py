@@ -6,11 +6,12 @@ import argparse
 import subprocess
 import sys
 import tempfile
+from re_pattern_library import patterns
 
 COLOR_BLUE = '\033[94m'
 COLOR_RESET = '\033[0m'
 
-def find_lines_to_remove(filename, verbose=False)->tuple[int, int]:
+def find_lines_to_replace(filename, pattern_name:str, verbose=False)->tuple[int, int]:
     start_line = 0
     end_line = 0
     with open(filename, 'r') as f:
@@ -19,17 +20,7 @@ def find_lines_to_remove(filename, verbose=False)->tuple[int, int]:
     # Join lines with newline so we can match across them
     text = ''.join(lines)
 
-    # Match: 3 lines of comment, middle one fixed, then export PATH
-    pattern = re.compile(
-        r"""
-        ^((\s*\n)*)                              # Optional blank lines at the start
-        ^\#.*\n                                  # First comment line
-        ^\#.*github\.com/mikegoelzer/ecp5-first-steps.*\n  # Second line must contain the URL
-        ^\#.*\n                                  # Third comment line (could be any comment)
-        ^export\s+PATH=.*$                       # export PATH=...
-        """, 
-        re.MULTILINE | re.VERBOSE
-    )
+    pattern = patterns[pattern_name]['pat']
 
     for match in pattern.finditer(text):
         start_char = match.start()
@@ -70,14 +61,33 @@ def find_lines_to_remove(filename, verbose=False)->tuple[int, int]:
     return start_line, end_line
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Delete a block of lines from a file")
-    parser.add_argument("filename", type=str, help="The file to delete the block from")
+    parser = argparse.ArgumentParser(description="Replace or delete a multi-line block from a file")
+    parser.add_argument("filename", type=str, nargs='?', help="The file to replace/delete the block from")
+    parser.add_argument("--pattern-name", '-p', type=str, help="The name of the pattern to match against (-l to list all patterns)")
+    parser.add_argument("--list-patterns", '-l', action="store_true", help="List all patterns available for use")
     parser.add_argument("--verbose", '-v', action="store_true", help="Print verbose output")
     parser.add_argument("--outfile", '-o', type=str, help="Write output to this file instead of overwriting filename")
     parser.add_argument("--dry-run", '-d', action="store_true", help="Write updated file to a temp file and show diff")
     parser.add_argument("--dry-run-preserve-temp-file", '-D', action="store_true", help="Same as --dry-run, but keep the temp file in 'filename.new' in current directory")
     parser.add_argument("--replacement-text", '-r', type=str, help="Text to replace the block with; '-' for stdin")
     args = parser.parse_args()
+
+    if args.list_patterns:
+        print("Available patterns:")
+        for pattern_name in patterns:
+            print(f"  {pattern_name.ljust(40)} {patterns[pattern_name]['desc']}")
+        sys.exit(0)
+    else:
+        if not args.pattern_name:
+            print("Error: -p/--pattern-name is required; use -l to list all patterns")
+            sys.exit(1)
+        if args.pattern_name not in patterns:
+            print(f"Error: pattern '{args.pattern_name}' not found")
+            sys.exit(1)
+        if not args.filename:
+            print("Error: -f/--filename is required; use -l to list all patterns")
+            sys.exit(1)
+
     args.filename = os.path.abspath(os.path.expanduser(args.filename))
 
     if args.dry_run_preserve_temp_file:
@@ -137,14 +147,13 @@ def do_dry_run_with_diff(filename, start_line, end_line, replacement_text:str=""
 
 def main():
     args = parse_args()
-    start_line, end_line = find_lines_to_remove(args.filename, verbose=args.verbose)
+    start_line, end_line = find_lines_to_replace(args.filename, pattern_name=args.pattern_name, verbose=args.verbose)
     
     if start_line == 0 and end_line == 0:
         print("block not found; nothing to do")
         return 0
 
     if args.replacement_text == '-':
-        print("Enter replacement text (Ctrl-D to end):")
         replacement_text = sys.stdin.read()
     else:
         replacement_text = args.replacement_text
