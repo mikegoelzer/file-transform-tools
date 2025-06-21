@@ -44,13 +44,22 @@ def main():
             else:
                 line_ranges = []
 
+            # blank line control from -w option
+            blank_line_control = args.blank_line_control
+            if blank_line_control is not None:
+                desired_preceding_newlines = blank_line_control[0]
+                desired_trailing_newlines = blank_line_control[1]
+            else:
+                desired_preceding_newlines = None
+                desired_trailing_newlines = None
+
             # do the replacement(s)
             try:
                 if args.dry_run:
-                    ret = do_dry_run_with_diff(filename, line_ranges=line_ranges, action=args.action, replacement_text=replacement_text, verbose=args.verbose, keep_temp_file=args.dry_run_preserve_temp_file, desired_preceding_newlines=args.blank_line_control[0], desired_trailing_newlines=args.blank_line_control[1])
+                    ret = do_dry_run_with_diff(filename, line_ranges=line_ranges, action=args.action, replacement_text=replacement_text, verbose=args.verbose, keep_temp_file=args.dry_run_preserve_temp_file, desired_preceding_newlines=desired_preceding_newlines, desired_trailing_newlines=desired_trailing_newlines)
                     error_count += ret
                 else:
-                    replace_or_insert_block(filename, line_ranges, action=args.action, replacement_text=replacement_text, outfile=args.outfile, verbose=args.verbose, create_backup=args.backup, create_backup_instructions=create_backup_instructions, desired_preceding_newlines=args.blank_line_control[0], desired_trailing_newlines=args.blank_line_control[1])
+                    replace_or_insert_block(filename, line_ranges, action=args.action, replacement_text=replacement_text, outfile=args.outfile, verbose=args.verbose, create_backup=args.backup, create_backup_instructions=create_backup_instructions, desired_preceding_newlines=desired_preceding_newlines, desired_trailing_newlines=desired_trailing_newlines)
             except Exception as e:
                 import traceback
                 print("".join(traceback.format_exception(type(e), e, e.__traceback__)))
