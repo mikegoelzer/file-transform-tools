@@ -12,39 +12,77 @@ class ActionIfBlockNotFound(Enum):
     REPLACE_OR_PREPEND = "replace_or_prepend"
 
 def parse_args(patterns:dict[str, dict[str, str]])->argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Replace or delete a multi-line block from a file")
-    parser.add_argument("filename", type=str, nargs='?', help="The file to replace/delete the block from (required)")
-    parser.add_argument("--pattern-name", '-p', type=str, help="The name of the pattern to match against (-l to list all patterns)")
-    parser.add_argument("--list-patterns", '-l', action="store_true", help="List all patterns available for use")
-    parser.add_argument("--verbose", '-v', action="store_true", help="Print verbose output")
-    parser.add_argument("--outfile", '-o', type=str, help="Write output to this file instead of overwriting filename")
-    parser.add_argument("--dry-run", '-d', action="store_true", help="Write updated file to a temp file and show diff")
-    parser.add_argument("--dry-run-preserve-temp-file", '-dp', action="store_true", help="Same as --dry-run, but keep the temp file in '[filename].new' in current directory")
-    parser.add_argument("--replacement-text", '-r', type=str, help="Text to replace the block with; '-' for stdin; if not text is provided, just deletes the block")
+    longest_pattern_name = max(len(pattern_name) for pattern_name in patterns)
+    patterns_list = ""
+    for pattern_name in patterns:
+        patterns_list += f"  {pattern_name.ljust(longest_pattern_name+2)} {patterns[pattern_name]['desc']}\n"
+
+    parser = argparse.ArgumentParser(description="Replace or delete a multi-line block from a file", 
+                                     formatter_class=argparse.RawDescriptionHelpFormatter, 
+                                     epilog=f"""
+
+    -o/--outfile and --dry-run/--dry-run-preserve-temp-file are mutually exclusive concepts.
+
+    Available patterns (see `re_pattern_library.py` for details):
+
+    {patterns_list}
+
+    Examples:
+
+    Replace the block in ~/.bashrc with a string from the command line (dry run, no overwrite):
+        replace_block -r "export PATH=/usr/local/bin:$PATH" -pat bash_rc_export_path ~/.bashrc
+
+    Replace the block with the contents of 'replacement.txt' (dry run, no overwrite):
+        replace_block -r- -pat bash_rc_export_path --dry-run tests/test_vectors/replace_block_debug_input.txt < replacement.txt
+    """)
+    parser.add_argument("filename", type=str, nargs='+', help="One or more input files to replace/delete/insert into (required)")
+    parser.add_argument("--pattern-name", '-pat', type=str, help="The name of the pattern to match against (-h to list all patterns)")
+    parser.add_argument("--replacement", '-r', type=str, help="Text to replace the block with; if no text is provided, the matching block is deleted; '-' for stdin, '@somefile' to read from a file")
+    
+    output_group = parser.add_mutually_exclusive_group()
+    output_group.add_argument("--outfile", '-o', type=str, help="Write output to this file instead of overwriting filename")
+    output_group.add_argument("--dry-run", '-dry', action="store_true", help="Write updated file to a temp file and show diff")
+    output_group.add_argument("--dry-run-preserve-temp-file", '-dryp', action="store_true", help="Implies --dry-run, but save the temp file as '[filename].new' in current directory")
     
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--append", '-A', action="store_true", help="If matching block not found, just append the replacement text to file")
     group.add_argument("--prepend", '-P', action="store_true", help="If matching block not found, just prepend the replacement text to file")
-    
+
+    parser.add_argument("--verbose", '-v', action="store_true", help="Print verbose output")
+
     args = parser.parse_args()
 
-    if args.list_patterns:
-        print("Available patterns:")
-        for pattern_name in patterns:
-            print(f"  {pattern_name.ljust(40)} {patterns[pattern_name]['desc']}")
-        sys.exit(0)
-    else:
+    if not args.append and not args.prepend:
         if not args.pattern_name:
-            print("Error: -p/--pattern-name is required; use -l to list all patterns")
+            print("Error: -pat/--pattern-name is required; see -h for help")
             sys.exit(1)
         if args.pattern_name not in patterns:
             print(f"Error: pattern '{args.pattern_name}' not found in pattern library")
             sys.exit(1)
-        if not args.filename:
-            print("Error: filename is required")
-            sys.exit(1)
+    if not args.filename:
+        print("Error: filename is required")
+        sys.exit(1)
 
-    args.filename = os.path.abspath(os.path.expanduser(args.filename))
+    if len(args.filename) == 1:
+        args.filename = [os.path.abspath(os.path.expanduser(args.filename[0]))]
+    else:
+        if args.outfile is not None:
+            print("error: -o/--outfile is not supported with multiple files; use dry run if you don't want to overwrite")
+            sys.exit(1)
+        files = []
+        for filename in args.filename:
+            if not os.path.exists(filename):
+                print(f"error: file '{filename}' not found")
+                sys.exit(1)
+            files.append(os.path.abspath(os.path.expanduser(filename)))
+        args.filename = files
+
+    if args.replacement and args.replacement.startswith('@'):
+        if not os.path.exists(args.replacement[1:]):
+            print(f"error: replacement file '{args.replacement[1:]}' not found")
+            sys.exit(1)
+        else:
+            args.replacement = open(args.replacement[1:], 'r').read()
 
     if args.append:
         args.action = ActionIfBlockNotFound.REPLACE_OR_APPEND

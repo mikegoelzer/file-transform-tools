@@ -226,6 +226,7 @@ class TestVectors(unittest.TestCase):
     replacement_text = """Hello,
 world!
 """
+    replacement_at_file = "@tests/test_vectors/replace_with_file_contents/sample-at-replacement-file.txt"
 
     def replace_with_asserts(self, test_file_str, action:ActionIfBlockNotFound, replacement_text:str, expected_line_range, expected_file_str):
         pat = patterns['bash_rc_export_path']['pat']
@@ -242,13 +243,31 @@ world!
         finally:
             os.unlink(temp.name)
 
-    def test_replace_block_debug_input(self):
+    def test_replace_block_with_string(self):
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        with open(f"{script_dir}/test_vectors/replace_block_debug_input.txt", 'r') as f:
-            test_file_str = f.read()
-        with open(f"{script_dir}/test_vectors/replace_block_debug_input.txt_expected", 'r') as f:
-            expected_file_str = f.read()
+        for filename in os.listdir(f"{script_dir}/test_vectors/replace_with_string/input"):
+            input_filename = f"{script_dir}/test_vectors/replace_with_string/input/{filename}"
+            expected_filename = f"{script_dir}/test_vectors/replace_with_string/expected/{filename}"
+            with open(input_filename, 'r') as f:
+                test_file_str = f.read()
+            with open(expected_filename, 'r') as f:
+                expected_file_str = f.read()
         self.replace_with_asserts(test_file_str, ActionIfBlockNotFound.REPLACE_ONLY, self.replacement_text, FileLineRange(132, 135), expected_file_str)
+
+    def test_replace_block_with_at_file(self):
+        with open(self.replacement_at_file[1:], 'r') as f:
+            replacement_text_from_file = f.read()
+
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        for filename in os.listdir(f"{script_dir}/test_vectors/replace_with_file_contents/input"):
+            input_filename = f"{script_dir}/test_vectors/replace_with_file_contents/input/{filename}"
+            expected_filename = f"{script_dir}/test_vectors/replace_with_file_contents/expected/{filename}"
+            with open(input_filename, 'r') as f:
+                test_file_str = f.read()
+            with open(expected_filename, 'r') as f:
+                expected_file_str = f.read()
+        
+        self.replace_with_asserts(test_file_str, ActionIfBlockNotFound.REPLACE_ONLY, replacement_text_from_file, FileLineRange(15, 18), expected_file_str)
 
 def main():
     result = unittest.main(exit=False)

@@ -1,0 +1,16 @@
+
+#
+# nvm
+#
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+. "$HOME/.cargo/env"
+
+#
+# Lattice Diamond license
+#
+LATTICE_LICENSE_FILE=/usr/local/diamond/3.13/license/license.dat
+
+Hello, world!
+It is good to see you.
