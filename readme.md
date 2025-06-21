@@ -54,17 +54,35 @@ replace_block ~/.bashrc
 
 ### Replacing a block
 
-```sh
-# replace the block with the contents of 'readme.md'
-./replace_block -r- -p bash_rc_export_path -d tests/replace_block_debug_input.txt < readme.md
-```
+Replacement string can come from stdin with `-r -`:
 
 ```sh
-# replace the block with a string from the command line
-./replace_block -r "export PATH=/usr/local/bin:$PATH" -p bash_rc_export_path -d ~/.bashrc
+# replace the block with the contents of 'replacement.txt'
+# (--dry-run just displays the diff, doesn't modify the file)
+./replace_block -r- -p bash_rc_export_path --dry-run tests/test_vectors/replace_block_debug_input.txt < replacement.txt
 ```
 
-## Running the tests
+Or replacement string can come from the command line with `-r "<string>"`:
+
+```sh
+# replace the block in ~/.bashrc with a string from the command line
+./replace_block -r "export PATH=/usr/local/bin:$PATH" -p bash_rc_export_path ~/.bashrc
+```
+
+### Replacing or appending/prepending to a block
+
+If the block is not found, by default nothing will be done.  Use `--append/-A` or `--prepend/-P` if you want the replacement text to be added anyway.
+
+Example (append to `~/.bashrc` if block is not found):
+
+```sh
+# replace the block in ~/.bashrc with a string from the command line, 
+# or append the string to ~/.bashrc if the block is not found
+# (--dry-run just displays the diff, doesn't modify ~/.bashrc)
+./replace_block -r "export PATH=/usr/local/bin:$PATH" -p bash_rc_export_path --append --dry-run ~/.bashrc
+```
+
+## Running the unit tests
 
 ```sh
 # run tests

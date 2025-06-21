@@ -4,6 +4,7 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
             "name": "Python Debugger: Current File",
             "type": "debugpy",
@@ -23,6 +24,14 @@
                 "--dry-run",
                 "${workspaceFolder}/tests/replace_block_debug_input.txt"
             ]
+        },
+        {
+            "name": "Python Debugger: replace_block Unit Tests",
+            "type": "debugpy",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "program": "tests/test_replaceblock.py",
+            "console": "integratedTerminal"
         }
     ]
 }
