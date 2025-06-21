@@ -1,0 +1,10 @@
+pyproject.toml
+setup.py
+file_transform_tools/__init__.py
+file_transform_tools/re_pattern_library.py
+file_transform_tools/replace_block.py
+file_transform_tools.egg-info/PKG-INFO
+file_transform_tools.egg-info/SOURCES.txt
+file_transform_tools.egg-info/dependency_links.txt
+file_transform_tools.egg-info/entry_points.txt
+file_transform_tools.egg-info/top_level.txt

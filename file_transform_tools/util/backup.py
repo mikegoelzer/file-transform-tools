@@ -36,3 +36,29 @@ def backup_file(filename):
     
     return backup_path
 
+class CreateBackupInstructions():
+    def __init__(self, color_enabled=True):
+        self.color_enabled = color_enabled
+        self.backup_files_map:dict[str, str] = {}
+
+    def is_empty(self)->bool:
+        return len(self.backup_files_map) == 0
+    
+    def append(self, filename:str, backup_filename:str):
+        filename = os.path.abspath(filename)
+        backup_filename = os.path.abspath(backup_filename)
+        self.backup_files_map[filename] = backup_filename
+    
+    def get_instructions_str(self)->str:
+        if self.color_enabled:
+            COLOR_YELLOW = '\033[93m'
+            COLOR_RESET = '\033[0m'
+            COLOR_BOLD = '\033[1m'
+        else:
+            COLOR_YELLOW = ''
+            COLOR_RESET = ''
+            COLOR_BOLD = ''
+        s = "To revert the overwritten files:\n" 
+        for filename, backup_filename in self.backup_files_map.items():
+            s += f"  {COLOR_YELLOW}mv {backup_filename} {filename}{COLOR_RESET}  # restores {COLOR_BOLD}{os.path.basename(filename)}{COLOR_RESET}\n"
+        return s

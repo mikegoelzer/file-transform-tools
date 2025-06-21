@@ -3,6 +3,10 @@ import os
 import sys
 from enum import Enum
 
+COLOR_GREEN = '\033[92m'
+COLOR_MAGENTA = '\033[95m'
+COLOR_RESET = '\033[0m'
+
 class ActionIfBlockNotFound(Enum):
     """
     What to do if the block is not found
@@ -14,27 +18,29 @@ class ActionIfBlockNotFound(Enum):
 def parse_args(patterns:dict[str, dict[str, str]])->argparse.Namespace:
     longest_pattern_name = max(len(pattern_name) for pattern_name in patterns)
     patterns_list = ""
-    for pattern_name in patterns:
-        patterns_list += f"  {pattern_name.ljust(longest_pattern_name+2)} {patterns[pattern_name]['desc']}\n"
+    for i, pattern_name in enumerate(patterns):
+        patterns_list += f"  {('('+str(i+1)+')').ljust(4)} {pattern_name.ljust(longest_pattern_name+4)} {patterns[pattern_name]['desc']}\n"
 
-    parser = argparse.ArgumentParser(description="Replace or delete a multi-line block from a file", 
+    parser = argparse.ArgumentParser(description=f"{COLOR_GREEN}Replace, update, insert or delete a multi-line block in one or more files{COLOR_RESET}", 
                                      formatter_class=argparse.RawDescriptionHelpFormatter, 
                                      epilog=f"""
 
-    -o/--outfile and --dry-run/--dry-run-preserve-temp-file are mutually exclusive concepts.
+  {COLOR_MAGENTA}NOTES{COLOR_RESET}
+  1. -o/--outfile and --dry-run/--dry-run-preserve-temp-file are mutually exclusive concepts
+  2. Dry run options require the `delta` tool to be installed and in the PATH.  See readme.md for instructions.
 
-    Available patterns (see `re_pattern_library.py` for details):
+  {COLOR_MAGENTA}AVAILABLE PATTERNS{COLOR_RESET} 
+  (see `re_pattern_library.py` for more info)
 
-    {patterns_list}
+  {patterns_list}
 
-    Examples:
+  {COLOR_MAGENTA}EXAMPLES{COLOR_RESET}
+  Replace the block in ~/.bashrc with a string from the command line (dry run, no overwrite):
+    replace_block -r "export PATH=/usr/local/bin:$PATH" -pat bash_rc_export_path ~/.bashrc
 
-    Replace the block in ~/.bashrc with a string from the command line (dry run, no overwrite):
-        replace_block -r "export PATH=/usr/local/bin:$PATH" -pat bash_rc_export_path ~/.bashrc
-
-    Replace the block with the contents of 'replacement.txt' (dry run, no overwrite):
-        replace_block -r- -pat bash_rc_export_path --dry-run tests/test_vectors/replace_block_debug_input.txt < replacement.txt
-    """)
+  Replace the block with the contents of 'replacement.txt' (dry run, no overwrite):
+    replace_block -r- -pat bash_rc_export_path --dry-run tests/test_vectors/replace_block_debug_input.txt < replacement.txt
+""")
     parser.add_argument("filename", type=str, nargs='+', help="One or more input files to replace/delete/insert into (required)")
     parser.add_argument("--pattern-name", '-pat', type=str, help="The name of the pattern to match against (-h to list all patterns)")
     parser.add_argument("--replacement", '-r', type=str, help="Text to replace the block with; if no text is provided, the matching block is deleted; '-' for stdin, '@somefile' to read from a file")
@@ -48,7 +54,6 @@ def parse_args(patterns:dict[str, dict[str, str]])->argparse.Namespace:
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--append", '-A', action="store_true", help="If matching block not found, just append the replacement text to file")
     group.add_argument("--prepend", '-P', action="store_true", help="If matching block not found, just prepend the replacement text to file")
-
 
     parser.add_argument('-y', action="store_true", help="Don't prompt about overwriting files")
     parser.add_argument("--verbose", '-v', action="store_true", help="Print verbose output")

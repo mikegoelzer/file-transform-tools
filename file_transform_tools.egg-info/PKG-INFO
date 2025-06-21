@@ -1,3 +1,23 @@
+Metadata-Version: 2.1
+Name: file-transform-tools
+Version: 0.1.0
+Summary: Tools for transforming files using regex patterns
+Home-page: https://github.com/mwg/file-transform-tools
+Author: mwg
+License: UNKNOWN
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
+
 # `replace_block`
 
 Deletes, replaces or inserts a block of lines into a file overwriting one of various multi-line regex patterns.  The is a library of patterns is in [`re_pattern_library.py`](re_pattern_library.py).
@@ -19,14 +39,6 @@ Install `delta` (for showing diffs) and make sure it's in your `PATH`:
     wget https://github.com/dandavison/delta/releases/download/${DELTA_VERSION}/git-delta_${DELTA_VERSION#v}_amd64.deb
     sudo dpkg -i git-delta_${DELTA_VERSION#v}_amd64.deb
     ```
-
-## Installation
-
-```sh
-git clone https://github.com/mikegoelzer/file_transform_tools.git
-cd file_transform_tools
-pip install --prefix ~/.local -e .
-```
 
 ## Usage
 
@@ -140,3 +152,4 @@ If you create these files, you must delete them manually later (if you wish to c
 # run tests
 ./tests/test_replaceblock.py
 ```
+

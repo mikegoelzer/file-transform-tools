@@ -2,15 +2,12 @@ import os
 import subprocess
 import sys
 import tempfile
-from util.find_block import FileLineRange
-from util.cli import ActionIfBlockNotFound
-from util.which import which_delta
-from util.backup import backup_file
+from file_transform_tools.util.find_block import FileLineRange
+from file_transform_tools.util.cli import ActionIfBlockNotFound
+from file_transform_tools.util.which import which_delta
+from file_transform_tools.util.backup import backup_file, CreateBackupInstructions
 
-COLOR_YELLOW = '\033[93m'
-COLOR_RESET = '\033[0m'
-
-def replace_or_insert_block(filename, line_range:FileLineRange, action:ActionIfBlockNotFound, replacement_text:str="", outfile=None, verbose=False, create_backup=True):
+def replace_or_insert_block(filename, line_range:FileLineRange, action:ActionIfBlockNotFound, replacement_text:str="", outfile=None, verbose=False, create_backup=False, create_backup_instructions:CreateBackupInstructions=None):
     # catch the case where there's nothing to replace and we were told to replace only
     if line_range.is_empty() and action == ActionIfBlockNotFound.REPLACE_ONLY:
         if verbose:
@@ -64,20 +61,20 @@ def replace_or_insert_block(filename, line_range:FileLineRange, action:ActionIfB
             backup_path = backup_file(filename)
         with open(filename, 'w') as f:
             f.writelines(new_file_lines)
-        if create_backup:
-            print(f"To restore the original {os.path.basename(filename)}, run: {COLOR_YELLOW}cp {backup_path} {filename}{COLOR_RESET}")
+        if create_backup and create_backup_instructions is not None:
+            create_backup_instructions.append(filename, backup_path)
 
 def do_dry_run_with_diff(filename, line_range:FileLineRange, action:ActionIfBlockNotFound, replacement_text:str="", verbose=False, keep_temp_file=False)->int:
-    if not which_delta(print_message=True):
-        return 1
-  
     try:
         temp_out_file = tempfile.NamedTemporaryFile(mode='w', delete=False)
         replace_or_insert_block(filename, line_range, action=action, replacement_text=replacement_text, outfile=temp_out_file.name, verbose=verbose)
         temp_out_file.close()
 
-        # show the diff
-        subprocess.run(['delta', filename, temp_out_file.name], stdout=sys.stdout, stderr=sys.stderr)
+        # show the diff if they have delta installed
+        if not which_delta(print_message=True):
+            return 1
+        else:
+            subprocess.run(['delta', filename, temp_out_file.name], stdout=sys.stdout, stderr=sys.stderr)
     except Exception as e:
         print(f"Error: {e}")
         return 1

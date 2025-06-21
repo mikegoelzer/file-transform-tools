@@ -5,11 +5,10 @@ import sys
 import tempfile
 import unittest
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from util.find_block import find_lines_to_replace, FileLineRange
-from re_pattern_library import patterns
-from util.cli import ActionIfBlockNotFound
-from replace_block import replace_or_insert_block
+from file_transform_tools.util.find_block import find_lines_to_replace, FileLineRange
+from file_transform_tools.re_pattern_library import patterns
+from file_transform_tools.util.cli import ActionIfBlockNotFound
+from file_transform_tools.replace_block import replace_or_insert_block
 
 class TestFindLinesToReplaceBashRc(unittest.TestCase):
     def assert_lines_to_remove(self, test_file_str, expected_start_line, expected_end_line):
@@ -252,7 +251,7 @@ world!
                 test_file_str = f.read()
             with open(expected_filename, 'r') as f:
                 expected_file_str = f.read()
-        self.replace_with_asserts(test_file_str, ActionIfBlockNotFound.REPLACE_ONLY, self.replacement_text, FileLineRange(132, 135), expected_file_str)
+            self.replace_with_asserts(test_file_str, ActionIfBlockNotFound.REPLACE_ONLY, self.replacement_text, FileLineRange(132, 135), expected_file_str)
 
     def test_replace_block_with_at_file(self):
         with open(self.replacement_at_file[1:], 'r') as f:
@@ -267,7 +266,7 @@ world!
             with open(expected_filename, 'r') as f:
                 expected_file_str = f.read()
         
-        self.replace_with_asserts(test_file_str, ActionIfBlockNotFound.REPLACE_ONLY, replacement_text_from_file, FileLineRange(15, 18), expected_file_str)
+            self.replace_with_asserts(test_file_str, ActionIfBlockNotFound.REPLACE_ONLY, replacement_text_from_file, FileLineRange(15, 18), expected_file_str)
 
 def main():
     result = unittest.main(exit=False)

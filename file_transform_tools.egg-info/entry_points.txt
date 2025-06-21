@@ -1,0 +1,3 @@
+[console_scripts]
+replace-block = file_transform_tools.replace_block:main
+
