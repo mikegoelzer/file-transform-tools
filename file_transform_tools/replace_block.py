@@ -28,22 +28,32 @@ def main():
             # find lines matching the pattern
             if args.pattern_name:
                 pattern = patterns[args.pattern_name]['pat']
-                line_range = find_lines_to_replace(filename, pattern=pattern, verbose=args.verbose)
-                if line_range.is_empty() and args.action == ActionIfBlockNotFound.REPLACE_ONLY:
-                    print("error: block not found but nothing to do without --append/-A or --prepend/-P")
-                    error_count += 1
+                line_ranges = find_lines_to_replace(filename, pattern=pattern, verbose=args.verbose)
+                if len(line_ranges) == 0:
+                    # we were asked to replace only, but there's nothing to replace
+                    if args.action == ActionIfBlockNotFound.REPLACE_ONLY:
+                        print("error: block not found but nothing to do without --append/-A or --prepend/-P")
+                        error_count += 1
+                    # we were asked to replace or append, there's nothing to replace, so we are appending.  modify the
+                    # replacement str with -A's argument if any
+                    elif args.action == ActionIfBlockNotFound.REPLACE_OR_APPEND:
+                        replacement_text = args.append + replacement_text
+                    # ditto for prepend
+                    elif args.action == ActionIfBlockNotFound.REPLACE_OR_PREPEND:
+                        replacement_text = replacement_text + args.prepend
             else:
-                line_range = FileLineRange(0, 0)
+                line_ranges = []
 
             # do the replacement(s)
             try:
                 if args.dry_run:
-                    ret = do_dry_run_with_diff(filename, line_range=line_range, action=args.action, replacement_text=replacement_text, verbose=args.verbose, keep_temp_file=args.dry_run_preserve_temp_file)
+                    ret = do_dry_run_with_diff(filename, line_ranges=line_ranges, action=args.action, replacement_text=replacement_text, verbose=args.verbose, keep_temp_file=args.dry_run_preserve_temp_file, desired_preceding_newlines=args.blank_line_control[0], desired_trailing_newlines=args.blank_line_control[1])
                     error_count += ret
                 else:
-                    replace_or_insert_block(filename, line_range, action=args.action, replacement_text=replacement_text, outfile=args.outfile, verbose=args.verbose, create_backup=args.backup, create_backup_instructions=create_backup_instructions)
+                    replace_or_insert_block(filename, line_ranges, action=args.action, replacement_text=replacement_text, outfile=args.outfile, verbose=args.verbose, create_backup=args.backup, create_backup_instructions=create_backup_instructions, desired_preceding_newlines=args.blank_line_control[0], desired_trailing_newlines=args.blank_line_control[1])
             except Exception as e:
-                print(f"error: {e}")
+                import traceback
+                print("".join(traceback.format_exception(type(e), e, e.__traceback__)))
                 error_count += 1
     finally:
         if create_backup_instructions is not None and not create_backup_instructions.is_empty():

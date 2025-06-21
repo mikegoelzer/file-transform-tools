@@ -6,6 +6,10 @@ from enum import Enum
 COLOR_GREEN = '\033[92m'
 COLOR_MAGENTA = '\033[95m'
 COLOR_RESET = '\033[0m'
+COLOR_BOLD = '\033[1m'
+COLOR_ORANGE = '\033[93m'
+COLOR_UNDERLINE = '\033[4m'
+COLOR_ITALIC = '\033[3m'
 
 class ActionIfBlockNotFound(Enum):
     """
@@ -28,6 +32,8 @@ def parse_args(patterns:dict[str, dict[str, str]])->argparse.Namespace:
   {COLOR_MAGENTA}NOTES{COLOR_RESET}
   1. -o/--outfile and --dry-run/--dry-run-preserve-temp-file are mutually exclusive concepts
   2. Dry run options require the `delta` tool to be installed and in the PATH.  See readme.md for instructions.
+  3. The optional arguments to -A and -P are {COLOR_UNDERLINE}only{COLOR_RESET} applied if no replacement is made.
+  4. The optional argument to -A is a {COLOR_ITALIC}prefix{COLOR_RESET} to the insertion, while for -P it is a {COLOR_ITALIC}suffix{COLOR_RESET} to the insertion.
 
   {COLOR_MAGENTA}AVAILABLE PATTERNS{COLOR_RESET} 
   (see `re_pattern_library.py` for more info)
@@ -35,11 +41,15 @@ def parse_args(patterns:dict[str, dict[str, str]])->argparse.Namespace:
   {patterns_list}
 
   {COLOR_MAGENTA}EXAMPLES{COLOR_RESET}
-  Replace the block in ~/.bashrc with a string from the command line (dry run, no overwrite):
+  Replace the matching block in ~/.bashrc with a string (dry run, no overwrite):
     replace_block -r "export PATH=/usr/local/bin:$PATH" -pat bash_rc_export_path ~/.bashrc
 
-  Replace the block with the contents of 'replacement.txt' (dry run, no overwrite):
+  Replace the matching block with the contents of 'replacement.txt' (dry run, no overwrite):
     replace_block -r- -pat bash_rc_export_path --dry-run tests/test_vectors/replace_block_debug_input.txt < replacement.txt
+
+  Try to replace the matching block with 'X=1', but if that's not found, append 'X=1' with a preceding newline (note that two are needed):
+    replace-block -y -b -r "X=1" -pat bash_rc_export_path {COLOR_BOLD}{COLOR_ORANGE}-A $'\\n'{COLOR_RESET} --dry-run readme.md
+  $'\\n' is a shell convention that inserts an actual newline instead of a backslash,n.
 """)
     parser.add_argument("filename", type=str, nargs='+', help="One or more input files to replace/delete/insert into (required)")
     parser.add_argument("--pattern-name", '-pat', type=str, help="The name of the pattern to match against (-h to list all patterns)")
@@ -52,15 +62,17 @@ def parse_args(patterns:dict[str, dict[str, str]])->argparse.Namespace:
     output_group.add_argument("--dry-run-preserve-temp-file", '-dryp', action="store_true", help="Implies --dry-run, but save the temp file as '[filename].new' in current directory")
     
     group = parser.add_mutually_exclusive_group()
-    group.add_argument("--append", '-A', action="store_true", help="If matching block not found, just append the replacement text to file")
-    group.add_argument("--prepend", '-P', action="store_true", help="If matching block not found, just prepend the replacement text to file")
+    group.add_argument("--append", '-A', type=str, nargs='?', const="", help="If matching block not found, just append the replacement text to file. Argument string is an optional prefix for the replacement text if it is appended (default ''). If you provide anything here, it will probably be $'\\n' as shown in the examples.")
+    group.add_argument("--prepend", '-P', type=str, nargs='?', const="", help="If matching block not found, just prepend the replacement text to file. Argument string is an optional suffix for the replacement text if it is prepended (default ''). If you provide anything here, it will probably be $'\\n' as shown in the examples.")
+
+    parser.add_argument("--blank-line-control", '-w', type=int, nargs=2, metavar=('preceding', 'trailing'), help="Required number of preceding and trailing newlines that should exist after the insertion, deletion or replacement of the block")
 
     parser.add_argument('-y', action="store_true", help="Don't prompt about overwriting files")
     parser.add_argument("--verbose", '-v', action="store_true", help="Print verbose output")
 
     args = parser.parse_args()
 
-    if not args.append and not args.prepend:
+    if args.append is None and args.prepend is None:
         if not args.pattern_name:
             print("Error: -pat/--pattern-name is required; see -h for help")
             sys.exit(1)
@@ -93,9 +105,9 @@ def parse_args(patterns:dict[str, dict[str, str]])->argparse.Namespace:
         else:
             args.replacement = open(args.replacement[1:], 'r').read()
 
-    if args.append:
+    if args.append is not None:
         args.action = ActionIfBlockNotFound.REPLACE_OR_APPEND
-    elif args.prepend:
+    elif args.prepend is not None:
         args.action = ActionIfBlockNotFound.REPLACE_OR_PREPEND
     else:
         args.action = ActionIfBlockNotFound.REPLACE_ONLY

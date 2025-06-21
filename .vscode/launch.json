@@ -5,6 +5,7 @@
     "version": "0.2.0",
     "configurations": [
 
+
         {
             "name": "Python Debugger: Current File",
             "type": "debugpy",
@@ -18,11 +19,22 @@
             "type": "debugpy",
             "request": "launch",
             "cwd": "${workspaceFolder}",
-            "program": "replace_block",
+            "program": "file_transform_tools/replace_block.py",
             "console": "integratedTerminal",
             "args": [
-                "--dry-run",
-                "${workspaceFolder}/tests/replace_block_debug_input.txt"
+                "-y",
+                "-b",
+                "-r",
+                "@y",
+                "-pat",
+                "bash_rc_export_path",
+                "-P",
+                "-o",
+                "x.txt",
+                "-w",
+                "3",
+                "0",
+                "${workspaceFolder}/readme.md",
             ]
         },
         {
