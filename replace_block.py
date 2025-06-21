@@ -33,7 +33,7 @@ def main():
                 ret = do_dry_run_with_diff(filename, line_range=line_range, action=args.action, replacement_text=replacement_text, verbose=args.verbose, keep_temp_file=args.dry_run_preserve_temp_file)
                 error_count += ret
             else:
-                replace_or_insert_block(filename, line_range, action=args.action, replacement_text=replacement_text, outfile=args.outfile, verbose=args.verbose)
+                replace_or_insert_block(filename, line_range, action=args.action, replacement_text=replacement_text, outfile=args.outfile, verbose=args.verbose, create_backup=args.backup)
         except Exception as e:
             print(f"error: {e}")
             error_count += 1

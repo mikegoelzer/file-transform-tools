@@ -38,7 +38,8 @@ def parse_args(patterns:dict[str, dict[str, str]])->argparse.Namespace:
     parser.add_argument("filename", type=str, nargs='+', help="One or more input files to replace/delete/insert into (required)")
     parser.add_argument("--pattern-name", '-pat', type=str, help="The name of the pattern to match against (-h to list all patterns)")
     parser.add_argument("--replacement", '-r', type=str, help="Text to replace the block with; if no text is provided, the matching block is deleted; '-' for stdin, '@somefile' to read from a file")
-    
+    parser.add_argument("--backup", '-b', action="store_true", help="Create a backup of the original file(s) in /tmp before overwriting")
+
     output_group = parser.add_mutually_exclusive_group()
     output_group.add_argument("--outfile", '-o', type=str, help="Write output to this file instead of overwriting filename")
     output_group.add_argument("--dry-run", '-dry', action="store_true", help="Write updated file to a temp file and show diff")
@@ -48,6 +49,8 @@ def parse_args(patterns:dict[str, dict[str, str]])->argparse.Namespace:
     group.add_argument("--append", '-A', action="store_true", help="If matching block not found, just append the replacement text to file")
     group.add_argument("--prepend", '-P', action="store_true", help="If matching block not found, just prepend the replacement text to file")
 
+
+    parser.add_argument('-y', action="store_true", help="Don't prompt about overwriting files")
     parser.add_argument("--verbose", '-v', action="store_true", help="Print verbose output")
 
     args = parser.parse_args()
@@ -59,8 +62,9 @@ def parse_args(patterns:dict[str, dict[str, str]])->argparse.Namespace:
         if args.pattern_name not in patterns:
             print(f"Error: pattern '{args.pattern_name}' not found in pattern library")
             sys.exit(1)
-    if not args.filename:
-        print("Error: filename is required")
+
+    if not args.filename or len(args.filename) == 0:
+        print("Error: at least one filename is required")
         sys.exit(1)
 
     if len(args.filename) == 1:
@@ -94,7 +98,7 @@ def parse_args(patterns:dict[str, dict[str, str]])->argparse.Namespace:
     if args.dry_run_preserve_temp_file:
         args.dry_run = True
 
-    if not args.outfile and not args.dry_run:
+    if not args.outfile and not args.dry_run and not args.y:
         # prompt the user to make sure overwrite is ok
         response = input(f"No -o/--outfile specified. Are you sure you want to overwrite '{args.filename}'? [y/N] ")
         if response.lower() != 'y':

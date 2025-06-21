@@ -5,8 +5,12 @@ import tempfile
 from util.find_block import FileLineRange
 from util.cli import ActionIfBlockNotFound
 from util.which import which_delta
+from util.backup import backup_file
 
-def replace_or_insert_block(filename, line_range:FileLineRange, action:ActionIfBlockNotFound, replacement_text:str="", outfile=None, verbose=False):
+COLOR_YELLOW = '\033[93m'
+COLOR_RESET = '\033[0m'
+
+def replace_or_insert_block(filename, line_range:FileLineRange, action:ActionIfBlockNotFound, replacement_text:str="", outfile=None, verbose=False, create_backup=True):
     # catch the case where there's nothing to replace and we were told to replace only
     if line_range.is_empty() and action == ActionIfBlockNotFound.REPLACE_ONLY:
         if verbose:
@@ -47,14 +51,21 @@ def replace_or_insert_block(filename, line_range:FileLineRange, action:ActionIfB
     # write the new file contents to the output file
     if verbose:
         print(f"new_file_lines = {new_file_lines}")
+
+    # create a backup of the file if requested
     if outfile:
         if verbose:
             print(f"After deleting lines {line_range.start_line} to {line_range.end_line} the contents will be placed in '{outfile}'")
         with open(outfile, 'w') as f:
             f.writelines(new_file_lines)
     else:
+        # overwrite original file
+        if create_backup:
+            backup_path = backup_file(filename)
         with open(filename, 'w') as f:
             f.writelines(new_file_lines)
+        if create_backup:
+            print(f"To restore the original {os.path.basename(filename)}, run: {COLOR_YELLOW}cp {backup_path} {filename}{COLOR_RESET}")
 
 def do_dry_run_with_diff(filename, line_range:FileLineRange, action:ActionIfBlockNotFound, replacement_text:str="", verbose=False, keep_temp_file=False)->int:
     if not which_delta(print_message=True):
