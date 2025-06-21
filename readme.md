@@ -24,21 +24,16 @@ Install `delta` (for showing diffs) and make sure it's in your `PATH`:
 
 ### Available regex patterns
 
-The patterns are defined in [`re_pattern_library.py`](re_pattern_library.py).  For a list and short descriptions, use the `-l` flag:
+The patterns are defined in [`re_pattern_library.py`](re_pattern_library.py).  For a list and short descriptions, see `--help`. 
 
 ```sh
-./replace_block -l
+./replace_block --help
 ```
 
 ### Deleting a block (no replacement)
 
 ```sh
-# show help
-replace_block --help
-```
-
-```sh
-# delete the block, but just prints the diff of what it would do
+# delete the block, but with --dry-run just prints the diff of what it would do
 replace_block --dry-run -pat bash_rc_export_path ~/.bashrc
 ```
 
@@ -69,6 +64,14 @@ Replacement string can come from stdin with `-r -`:
 ./replace_block -r- -pat bash_rc_export_path --dry-run tests/test_vectors/replace_block_debug_input.txt < replacement.txt
 ```
 
+Replacement string can come from a file with `-r @<filename>`:
+
+```sh
+# replace the block with the contents of 'replacement.txt'
+# (--dry-run just displays the diff, doesn't modify the file)
+./replace_block -r @replacement.txt -pat bash_rc_export_path --dry-run tests/test_vectors/replace_block_debug_input.txt
+```
+
 ### Replacing or appending/prepending
 
 If the block is not found, by default nothing will be done.  Use `--append/-A` or `--prepend/-P` if you want the replacement text to be added anyway.
@@ -96,6 +99,32 @@ which is equivalent to:
 ```sh
 echo "export PATH=/usr/local/bin:$PATH" >> ~/.bashrc
 ```
+
+### Processing multiple files
+
+You can pass multiple files to `replace_block` to replace the same block of text in each file with the same replacement string.  However, the `--outfile` option is not supported with multiple files, so you must either allow overwrite or use `--dry-run` if you want to test.
+
+```sh
+./replace_block -r "export PATH=/usr/local/bin:$PATH" -pat bash_rc_export_path ~/.bashrc ~/.zshrc
+```
+
+### Backup files
+
+If you're worried about clobbering your input file, you can use the `-b` option to create a backup of the file before overwriting it.
+
+The back up file is saved to `/tmp` with a name like `/tmp/[filename]-[timestamp].bak`.
+
+Example:
+
+```sh
+./replace_block -b -r "replacement text" -pat bash_rc_export_path ~/.bashrc
+# creates something like /tmp/home-user-.bashrc-20250621_120100.000000.bak
+```
+
+If you create these files, you must delete them manually later (if you wish to clean them up).
+
+
+
 
 ## Running the unit tests
 
