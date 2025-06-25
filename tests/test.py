@@ -24,8 +24,8 @@ class VerifyDeltaPresent(unittest.TestCase):
 # control which tests are skipped during debugging
 skip_tests = [
     #VerifyDeltaPresent,
-    TestFindLinesToReplaceBashRc,
-    TestReplaceBlockBashRc,
+    #TestFindLinesToReplaceBashRc,
+    #TestReplaceBlockBashRc,
     TestVectors,
     TestSlangReplacer,
     TestPrependAndAppendWithNewLineControl,
