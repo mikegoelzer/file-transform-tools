@@ -1,4 +1,5 @@
 from file_transform_tools.util.find_block import FileLineRange
+from file_transform_tools.util.correct_newlines.slim_replacement import get_num_leading_and_trailing_blank_lines_within_replacement_block
 
 def correct_newlines(file_lines:list[str], line_ranges_inserted_or_replaced:list[FileLineRange], desired_preceding_newlines:int, desired_trailing_newlines:int)->list[str]:
     """
@@ -9,55 +10,6 @@ def correct_newlines(file_lines:list[str], line_ranges_inserted_or_replaced:list
     #
     # Functions
     #
-    def get_num_leading_and_trailing_blank_lines_within_replacement_block(modified_line_range:FileLineRange)->tuple[int,int]:
-        """
-        There may be leading or trailing blank lines inside the replacement block itself, so we need to keep track of that.
-        Also, the block may be blank and entirely non-existant.
-
-        The function returns the number of leading and trailing blank lines inside the block.  If the block is empty, obviously
-        it returns zero for both.
-
-        Does not return Nones.
-        """
-
-        if modified_line_range.is_empty():
-            return 0,0
-
-        # find the first and last non-blank lines in the modified block (if any)
-        first_non_blank_within_modified_block = None
-        last_non_blank_within_modified_block = None
-        for idx, line in enumerate(file_lines[modified_line_range.start_line:modified_line_range.end_line+1]):
-            if line.strip() != '':
-                if first_non_blank_within_modified_block is None:
-                    first_non_blank_within_modified_block = idx + modified_line_range.start_line
-                last_non_blank_within_modified_block = idx + modified_line_range.start_line
-        
-        
-        assert (first_non_blank_within_modified_block is None and last_non_blank_within_modified_block is None) or (first_non_blank_within_modified_block is not None and last_non_blank_within_modified_block is not None), "sanity check: either they are both None or neither is None"
-
-        if first_non_blank_within_modified_block is None:
-            # entire insertion is blank lines, so add that number of blank lines to our count of leading blanks later on
-            add_to_leading_blank_lines = len(modified_line_range)
-        else:
-            if first_non_blank_within_modified_block > 0:
-                # zero or more leading blank lines inside replacement block, so that's how many we will add to our count of leading blank lines
-                add_to_leading_blank_lines = first_non_blank_within_modified_block-modified_line_range.start_line
-            else:
-                # the first non-blank line is the first line of the modified block, so we don't need to add any leading blank lines
-                add_to_leading_blank_lines = 0
-
-        if last_non_blank_within_modified_block is None:
-            # entire insertion is blank lines, but we accounted for it already with add_to_leading_blank_lines,
-            # so we don't have to add any blanks at the end
-            add_to_trailing_blank_lines = 0
-        else:
-            # zero or more trailing blank lines inside replacement block, so that's how many we will add to our count of trailing blank lines
-            add_to_trailing_blank_lines = modified_line_range.end_line-last_non_blank_within_modified_block
-
-        assert add_to_leading_blank_lines is not None and add_to_leading_blank_lines>=0, "this function should never return a none or negative"
-        assert add_to_trailing_blank_lines is not None and add_to_trailing_blank_lines>=0, "this function should never return a none or negative"
-        return add_to_leading_blank_lines, add_to_trailing_blank_lines
-
     def get_last_non_blank_line_idx_before_range_start(file_lines:list[str], modified_line_range:FileLineRange)->int|None:
         """
         Returns the last non-blank line before the modified range's start line.
@@ -139,7 +91,7 @@ def correct_newlines(file_lines:list[str], line_ranges_inserted_or_replaced:list
                 return FileLineRange(first_trailing_blank_line, last_trailing_blank_line)
         
         # get internal blank line counts within the replacement
-        modified_range_internal_leading_blanks, modified_range_internal_trailing_blanks = get_num_leading_and_trailing_blank_lines_within_replacement_block(modified_line_range=modified_line_range)
+        modified_range_internal_leading_blanks, modified_range_internal_trailing_blanks = get_num_leading_and_trailing_blank_lines_within_replacement_block(file_lines=file_lines, modified_line_range=modified_line_range)
         
         return get_leading_blank_range(), get_trailing_blank_range()
     

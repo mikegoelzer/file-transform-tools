@@ -24,6 +24,6 @@ def find_lines_to_replace(filename, pattern:re.Pattern, verbose=False)->list[Fil
             print(f"Match from line {start_line} to {end_line}")
             print(repr(text[match.start():match.end()]))
     
-        file_line_ranges.append(FileLineRange(start_line, end_line))
+        file_line_ranges.append(FileLineRange(start_line=start_line, num_lines=end_line-start_line+1))
     
     return file_line_ranges

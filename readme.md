@@ -191,5 +191,5 @@ If you create these files, you must delete them manually later (if you wish to c
 
 ```sh
 # run tests
-./tests/test_replaceblock.py
+./tests/test.py
 ```

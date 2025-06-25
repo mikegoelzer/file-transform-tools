@@ -5,7 +5,7 @@ import tempfile
 from typing import Optional
 from file_transform_tools.util.find_block import FileLineRange
 from file_transform_tools.util.cli import ActionIfBlockNotFound
-from file_transform_tools.util.which import which_delta
+from file_transform_tools.util.delta import which_delta, show_delta_diff
 from file_transform_tools.util.backup import backup_file, CreateBackupInstructions
 from file_transform_tools.util.correct_newlines.correct_newlines import correct_newlines
 
@@ -16,13 +16,13 @@ def replace_or_insert_block(filename, line_ranges:list[FileLineRange], action:Ac
     #
 
     def replace_next_occurrence(file_lines:list[str], replacement_lines:list[str], line_range:FileLineRange, line_ranges_inserted_or_replaced:list[FileLineRange])->list[str]:
-        new_file_lines = file_lines[0:line_range.start_line] + replacement_lines + file_lines[line_range.end_line+1:]
+        new_file_lines = file_lines[0:line_range.start_line] + replacement_lines + file_lines[line_range.start_line+line_range.num_lines:]
         if line_ranges_inserted_or_replaced is not None:
             num_lines_being_replaced = len(line_range)
             num_lines_inserted_or_replaced = len(replacement_lines)
             increase_in_file_length = num_lines_inserted_or_replaced - num_lines_being_replaced # negative means decrease
             # we keep track of which line ranges in the final file were inserted/replaced by us for the final newline modification
-            line_ranges_inserted_or_replaced.append(FileLineRange(line_range.start_line, line_range.end_line+increase_in_file_length))
+            line_ranges_inserted_or_replaced.append(FileLineRange(start_line=line_range.start_line, num_lines=line_range.num_lines+increase_in_file_length))
         return new_file_lines
     
     #
@@ -61,12 +61,12 @@ def replace_or_insert_block(filename, line_ranges:list[FileLineRange], action:Ac
             # append the replacement text to the end of the file
             new_file_lines = file_lines + replacement_lines
             # keep track of lines in final file that were inserted or replaced by us
-            line_ranges_inserted_or_replaced = [FileLineRange(len(file_lines)+1, len(file_lines) + len(replacement_lines))]
+            line_ranges_inserted_or_replaced = [FileLineRange(start_line=len(file_lines)+1, num_lines=len(file_lines) + len(replacement_lines)-len(file_lines))]
         elif action == ActionIfBlockNotFound.REPLACE_OR_PREPEND:
             # prepend the replacement text to the beginning of the file
             new_file_lines = replacement_lines + file_lines
             # same idea as above
-            line_ranges_inserted_or_replaced = [FileLineRange(1, len(replacement_lines)-1)]
+            line_ranges_inserted_or_replaced = [FileLineRange(start_line=1, num_lines=len(replacement_lines))]
     else:
         # if we have any line ranges, they should be non empty
         for line_range in line_ranges:
@@ -86,7 +86,7 @@ def replace_or_insert_block(filename, line_ranges:list[FileLineRange], action:Ac
                 if new_num_file_lines != original_num_file_lines:
                     new_line_ranges = line_ranges
                     for idx, line_range in enumerate(line_ranges[line_range_index+1:]):
-                        new_line_ranges[line_range_index+1+idx] = FileLineRange(line_range.start_line + new_num_file_lines - original_num_file_lines, line_range.end_line + new_num_file_lines - original_num_file_lines)
+                        new_line_ranges[line_range_index+1+idx] = FileLineRange(start_line=line_range.start_line + new_num_file_lines - original_num_file_lines, num_lines=line_range.num_lines + new_num_file_lines - original_num_file_lines)
                     line_ranges = new_line_ranges
                     original_num_file_lines = new_num_file_lines
 
@@ -114,9 +114,9 @@ def replace_or_insert_block(filename, line_ranges:list[FileLineRange], action:Ac
         if create_backup and create_backup_instructions is not None:
             create_backup_instructions.append(filename, backup_path)
 
-def do_dry_run_with_diff(filename, line_ranges:list[FileLineRange], action:ActionIfBlockNotFound, replacement_text:str="", verbose=False, keep_temp_file=False, desired_preceding_newlines:int=None, desired_trailing_newlines:int=None)->int:
+def do_dry_run_with_diff(filename:str, line_ranges:list[FileLineRange], action:ActionIfBlockNotFound, replacement_text:str="", verbose=False, keep_temp_file=False, desired_preceding_newlines:int=None, desired_trailing_newlines:int=None)->int:
     try:
-        temp_out_file = tempfile.NamedTemporaryFile(mode='w', delete=False)
+        temp_out_file = tempfile.NamedTemporaryFile(mode='w', delete=False, prefix=f"{filename}.new")
         replace_or_insert_block(filename, line_ranges, action=action, replacement_text=replacement_text, outfile=temp_out_file.name, verbose=verbose, desired_preceding_newlines=desired_preceding_newlines, desired_trailing_newlines=desired_trailing_newlines)
         temp_out_file.close()
 
@@ -124,13 +124,16 @@ def do_dry_run_with_diff(filename, line_ranges:list[FileLineRange], action:Actio
         if not which_delta(print_message=True):
             return 1
         else:
-            subprocess.run(['delta', filename, temp_out_file.name], stdout=sys.stdout, stderr=sys.stderr)
+            show_delta_diff(filename, temp_out_file.name)
     except Exception as e:
         print(f"error (at line {sys.exc_info()[2].tb_lineno}): {e}")
         return 1
     finally:
         if not keep_temp_file:
-            os.unlink(temp_out_file.name)
+            try:
+                os.unlink(temp_out_file.name)
+            except Exception as e:
+                pass
         else:
             temp_file_new_name = f"{os.path.basename(filename)}.new"
             os.rename(temp_out_file.name, temp_file_new_name)
