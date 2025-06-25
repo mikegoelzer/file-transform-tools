@@ -16,16 +16,16 @@ from test_slang_replacer import TestSlangReplacer, TestPrependAndAppendWithNewLi
 from test_subprocess_invoke_replace_block import TestSubprocessInvokeReplaceBlock
 
 class VerifyDeltaPresent(unittest.TestCase):
-    def verify_delta_present(self):
-        import file_transform_tools.util.which_delta
-        if not file_transform_tools.util.which_delta(print_message=False):
+    def test_delta_present(self):
+        import file_transform_tools.util.delta
+        if not file_transform_tools.util.delta.which_delta(print_message=False):
             self.fail("delta not found in PATH")
 
 # control which tests are skipped during debugging
 skip_tests = [
-    #VerifyDeltaPresent
-    #TestFindLinesToReplaceBashRc,
-    #TestReplaceBlockBashRc,
+    #VerifyDeltaPresent,
+    TestFindLinesToReplaceBashRc,
+    TestReplaceBlockBashRc,
     TestVectors,
     TestSlangReplacer,
     TestPrependAndAppendWithNewLineControl,
@@ -39,8 +39,8 @@ def main():
     suite = unittest.TestSuite()
     
     # Add all test cases from this file
-    if VerifyDeltaPresent not in skip_tests:
-        suite.addTests(unittest.TestLoader().loadTestsFromTestCase(VerifyDeltaPresent))
+    # if VerifyDeltaPresent not in skip_tests:
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(VerifyDeltaPresent))
     if TestFindLinesToReplaceBashRc not in skip_tests:
         suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestFindLinesToReplaceBashRc))
     if TestReplaceBlockBashRc not in skip_tests:
