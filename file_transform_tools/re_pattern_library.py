@@ -1,4 +1,5 @@
 import re
+import sys
 import unittest
 
 # Match: 3 lines of comment, middle one fixed, then export PATH
@@ -8,6 +9,7 @@ bash_rc_export_path_pattern = re.compile(
     ^\#.*github\.com.mikegoelzer/ecp5-first-steps.*\n  # Second line must contain the URL
     ^\#.*\n                                  # Third comment line (could be any comment)
     ^export\s+PATH=.*$                       # export PATH=...
+    (^export\s+RISC[^=]+=.*$\n)*                 # zero or more export VAR=... lines
     """, 
     re.MULTILINE | re.VERBOSE
 )
@@ -68,3 +70,47 @@ export PATH=$PATH:/home/mwg/ecp5-first-steps/my-designs/util/build_helpers/templ
             print(f"match.start() = {match.start()}, match.end() = {match.end()}")
             did_match = True
         self.assertTrue(did_match)
+
+    def test_bash_rc_export_path_with_env_vars(self):
+        did_match = False
+        for match in bash_rc_export_path_pattern.finditer("""
+#
+# Lattice Diamond license
+#
+LATTICE_LICENSE_FILE=/usr/local/diamond/3.13/license/license.dat
+
+#
+# Added by /home/mwg/ecp5-first-steps/my-designs/util/update_bashrc.sh from git@github.com:mikegoelzer/ecp5-first-steps.git
+# 
+export PATH=$PATH:/home/mwg/ecp5-first-steps/my-designs/util/build_helpers/template_tool:/home/mwg/ecp5-first-steps/my-designs/util/continuous_make:/home/mwg/ecp5-first-steps/my-designs/util/slang_tb_gtkwave_helper:/home/mwg/ecp5-first-steps/my-designs/util/clog2
+export FOO=bar
+export BAR="baz"
+export BAZ='qux'
+"""):
+            did_match = True
+        self.assertTrue(did_match)
+
+    def test_bash_rc_export_path_without_any_trailing_env_vars(self):
+        did_match = False
+        for match in bash_rc_export_path_pattern.finditer("""
+#
+# Lattice Diamond license
+#
+LATTICE_LICENSE_FILE=/usr/local/diamond/3.13/license/license.dat
+
+#
+# Added by /home/mwg/ecp5-first-steps/my-designs/util/update_bashrc.sh from git@github.com:mikegoelzer/ecp5-first-steps.git
+# 
+export PATH=$PATH:/home/mwg/ecp5-first-steps/my-designs/util/build_helpers/template_tool:/home/mwg/ecp5-first-steps/my-designs/util/continuous_make:/home/mwg/ecp5-first-steps/my-designs/util/slang_tb_gtkwave_helper:/home/mwg/ecp5-first-steps/my-designs/util/clog2
+"""):
+            did_match = True
+        self.assertTrue(did_match)
+
+if __name__ == "__main__":
+    result = unittest.main(exit=False)
+    if result.result.wasSuccessful():
+        print("✅ all tests passed!")
+        sys.exit(0)
+    else:
+        print("❌ some tests failed")
+        sys.exit(1)
