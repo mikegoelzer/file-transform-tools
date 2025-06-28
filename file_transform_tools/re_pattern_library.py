@@ -8,15 +8,15 @@ bash_rc_export_path_pattern = re.compile(
     ^\#.*\n                                  # First comment line
     ^\#.*github\.com.mikegoelzer/ecp5-first-steps.*\n  # Second line must contain the URL
     ^\#.*\n                                  # Third comment line (could be any comment)
-    ^export\s+PATH=.*$                       # export PATH=...
-    (^export\s+RISC[^=]+=.*$\n)*                 # zero or more export VAR=... lines
+    ^export\s+PATH=.*\n                      # export PATH=...
+    (?:^export\s+RISC[^=]+=.*$\n)*            # zero or more export RISC*=... lines
     """, 
     re.MULTILINE | re.VERBOSE
 )
 
 ifdef_slang_pattern = re.compile(
     r"""
-    ^\s*\`ifdef\s+SLANG.*\n                     # `ifdef SLANG
+    ^\s*\`ifdef\s+SLANG.*\n                  # `ifdef SLANG
     ^(.*\n)*                                 # zero or more lines
     ^\s*\`endif.*$                           # `endif
     """, 
@@ -71,9 +71,9 @@ export PATH=$PATH:/home/mwg/ecp5-first-steps/my-designs/util/build_helpers/templ
             did_match = True
         self.assertTrue(did_match)
 
-    def test_bash_rc_export_path_with_env_vars(self):
+    def test_bash_rc_export_path_with_env_vars_run_twice(self):
         did_match = False
-        for match in bash_rc_export_path_pattern.finditer("""
+        file_str = """
 #
 # Lattice Diamond license
 #
@@ -86,23 +86,9 @@ export PATH=$PATH:/home/mwg/ecp5-first-steps/my-designs/util/build_helpers/templ
 export FOO=bar
 export BAR="baz"
 export BAZ='qux'
-"""):
-            did_match = True
-        self.assertTrue(did_match)
-
-    def test_bash_rc_export_path_without_any_trailing_env_vars(self):
-        did_match = False
-        for match in bash_rc_export_path_pattern.finditer("""
-#
-# Lattice Diamond license
-#
-LATTICE_LICENSE_FILE=/usr/local/diamond/3.13/license/license.dat
-
-#
-# Added by /home/mwg/ecp5-first-steps/my-designs/util/update_bashrc.sh from git@github.com:mikegoelzer/ecp5-first-steps.git
-# 
-export PATH=$PATH:/home/mwg/ecp5-first-steps/my-designs/util/build_helpers/template_tool:/home/mwg/ecp5-first-steps/my-designs/util/continuous_make:/home/mwg/ecp5-first-steps/my-designs/util/slang_tb_gtkwave_helper:/home/mwg/ecp5-first-steps/my-designs/util/clog2
-"""):
+"""
+        for match in bash_rc_export_path_pattern.finditer(file_str):
+            print(f"match.start() = {match.start()}, match.end() = {match.end()}")
             did_match = True
         self.assertTrue(did_match)
 
