@@ -564,7 +564,7 @@ def main():
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestSlangReplacer))
 
     # these tests are currently failing...
-    # suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestPrependAndAppendWithNewLineControl))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestPrependAndAppendWithNewLineControl))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestSubprocessInvoke))
 
     # Add test cases from re_pattern_library.py

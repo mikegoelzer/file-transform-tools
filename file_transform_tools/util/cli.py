@@ -10,6 +10,12 @@ COLOR_BOLD = '\033[1m'
 COLOR_ORANGE = '\033[93m'
 COLOR_UNDERLINE = '\033[4m'
 COLOR_ITALIC = '\033[3m'
+COLOR_BLUE_BKG = '\033[44m'
+COLOR_GREEN_BKG = '\033[42m'
+COLOR_YELLOW_BKG = '\033[43m'
+COLOR_RED_BKG = '\033[41m'
+COLOR_CYAN_BKG = '\033[46m'
+COLOR_WHITE_BKG = '\033[47m'
 
 class ActionIfBlockNotFound(Enum):
     """
@@ -59,7 +65,7 @@ def parse_args(patterns:dict[str, dict[str, str]])->argparse.Namespace:
     output_group = parser.add_mutually_exclusive_group()
     output_group.add_argument("--outfile", '-o', type=str, help="Write output to this file instead of overwriting filename")
     output_group.add_argument("--dry-run", '-dry', action="store_true", help="Write updated file to a temp file and show diff")
-    output_group.add_argument("--dry-run-preserve-temp-file", '-dryp', action="store_true", help="Implies --dry-run, but save the temp file as '[filename].new' in current directory")
+    output_group.add_argument("--preserve-temp-file-dry-run", '-pdry', action="store_true", help="Implies --dry-run, but save the temp file as '[filename].new' in current directory")
     
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--append", '-A', type=str, nargs='?', const="", help="If matching block not found, just append the replacement text to file. Argument string is an optional prefix for the replacement text if it is appended (default ''). If you provide anything here, it will probably be $'\\n' as shown in the examples.")
@@ -112,7 +118,7 @@ def parse_args(patterns:dict[str, dict[str, str]])->argparse.Namespace:
     else:
         args.action = ActionIfBlockNotFound.REPLACE_ONLY
 
-    if args.dry_run_preserve_temp_file:
+    if args.preserve_temp_file_dry_run:
         args.dry_run = True
 
     if not args.outfile and not args.dry_run and not args.y:

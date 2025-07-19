@@ -56,7 +56,7 @@ def main():
             # do the replacement(s)
             try:
                 if args.dry_run:
-                    ret = do_dry_run_with_diff(filename, line_ranges=line_ranges, action=args.action, replacement_text=replacement_text, verbose=args.verbose, keep_temp_file=args.dry_run_preserve_temp_file, desired_preceding_newlines=desired_preceding_newlines, desired_trailing_newlines=desired_trailing_newlines)
+                    ret = do_dry_run_with_diff(filename, line_ranges=line_ranges, action=args.action, replacement_text=replacement_text, verbose=args.verbose, keep_temp_file=args.preserve_temp_file_dry_run, desired_preceding_newlines=desired_preceding_newlines, desired_trailing_newlines=desired_trailing_newlines)
                     error_count += ret
                 else:
                     replace_or_insert_block(filename, line_ranges, action=args.action, replacement_text=replacement_text, outfile=args.outfile, verbose=args.verbose, create_backup=args.backup, create_backup_instructions=create_backup_instructions, desired_preceding_newlines=desired_preceding_newlines, desired_trailing_newlines=desired_trailing_newlines)

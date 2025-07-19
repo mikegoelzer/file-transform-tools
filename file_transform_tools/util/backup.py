@@ -58,7 +58,10 @@ class CreateBackupInstructions():
             COLOR_YELLOW = ''
             COLOR_RESET = ''
             COLOR_BOLD = ''
-        s = "To revert the overwritten files:\n" 
+        s = "To view the changes:\n" 
+        for filename, backup_filename in self.backup_files_map.items():
+            s += f"  {COLOR_YELLOW}delta {backup_filename} {filename}{COLOR_RESET}\n\n"
+        s += "To revert the overwritten file(s):\n" 
         for filename, backup_filename in self.backup_files_map.items():
             s += f"  {COLOR_YELLOW}mv {backup_filename} {filename}{COLOR_RESET}  # restores {COLOR_BOLD}{os.path.basename(filename)}{COLOR_RESET}\n"
         return s
